@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Elemento-X | Catálogo Digital</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0; padding: 0;
+    background: #fff7f0;
+    color: #333;
+  }
+  header {
+    background: #d93025;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.8em;
+    letter-spacing: 2px;
+  }
+  main {
+    padding: 20px;
+  }
+  .endereco {
+    background: #fce8e6;
+    border: 1px solid #d93025;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .produtos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+  }
+  .produto {
+    background: white;
+    border-radius: 8px;
+    width: 180px;
+    padding: 10px;
+    box-shadow: 0 3px 6px #d9a49a;
+    text-align: center;
+  }
+  .produto img {
+    width: 100%;
+    border-radius: 8px;
+  }
+  .produto h3 {
+    margin: 10px 0 6px;
+    font-size: 1.1em;
+  }
+  .produto p {
+    margin: 5px 0 10px;
+    font-weight: bold;
+    color: #d93025;
+  }
+  .produto button {
+    background: #d93025;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .carrinho {
+    position: fixed;
+    top: 100px;
+    right: 10px;
+    width: 300px;
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #d93025;
+    box-shadow: 0 4px 8px #c8564b;
+  }
+  .carrinho h2 {
+    color: #d93025;
+    margin-top: 0;
+    text-align: center;
+  }
+  #listaCarrinho {
+    list-style: none;
+    padding-left: 0;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  #listaCarrinho li {
+    margin-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .remover {
+    background: none;
+    border: none;
+    color: #d93025;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  #total {
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: right;
+    color: #d93025;
+  }
+  textarea, select {
+    width: 100%;
+    margin-top: 10px;
+    padding: 7px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    resize: vertical;
+    font-size: 0.9em;
+  }
+  button#finalizar, button#limpar {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button#finalizar {
+    background: #2e7d32;
+    color: white;
+  }
+  button#limpar {
+    background: #c62828;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<header>Elemento-X 🍔 - Seu lanche, seu jeito!</header>
+
+<main>
+  <div class="endereco">
+    📍 Retire seu pedido no balcão:<br />
+    Rua Cegonhas, 105 - Aventureiro – Joinville/SC
+  </div>
+
+  <div>
+    <label for="bairroEntrega"><strong>Selecione seu bairro para calcular taxa de entrega:</strong></label>
+    <select id="bairroEntrega" onchange="calcularTaxa()">
+      <option value="" selected disabled>Escolha seu bairro</option>
+      <option value="Aventureiro">Aventureiro</option>
+      <option value="América">América</option>
+      <option value="Boa Vista">Boa Vista</option>
+      <option value="Centro">Centro</option>
+      <option value="Costa e Silva">Costa e Silva</option>
+      <option value="Iririú">Iririú</option>
+      <option value="Outro">Outro bairro (taxa fixa)</option>
+    </select>
+    <p id="taxaEntrega" style="font-weight:bold; margin-top:8px;">Taxa de entrega: R$ 0,00</p>
+  </div>
+
+  <div class="produtos" id="produtosContainer">
+    <!-- Produtos vão ser adicionados via JS -->
+  </div>
+</main>
+
+<aside class="carrinho">
+  <h2>🛒 Seu Pedido</h2>
+  <ul id="listaCarrinho"></ul>
+  <p id="total">Total: R$ 0,00</p>
+  <textarea id="observacao" rows="3" placeholder="Observações (ex.: sem cebola, mais queijo)..."></textarea>
+  <button id="finalizar" onclick="enviarWhatsApp()">Finalizar Pedido</button>
+  <button id="limpar" onclick="limparCarrinho()">Limpar Carrinho</button>
+</aside>
+
+<script>
+  const produtos = [
+    { nome: "X-Burguer", preco: 15, img: "https://i.imgur.com/W6euSn9.png", descricao: "Pão, hambúrguer artesanal, queijo, alface, tomate" },
+    { nome: "X-Salada", preco: 17, img: "https://i.imgur.com/yXKvdQO.png", descricao: "Pão, hambúrguer artesanal, queijo, alface, tomate, maionese" },
+    { nome: "X-Bacon", preco: 19, img: "https://i.imgur.com/yDwTR8Y.png", descricao: "Pão, hambúrguer artesanal, queijo, bacon, maionese" },
+    { nome: "X-Egg", preco: 18, img: "https://i.imgur.com/FR4FLdy.jpeg", descricao: "Pão, hambúrguer artesanal, queijo, ovo, maionese" },
+    { nome: "Batata Frita Pequena", preco: 10, img: "https://i.imgur.com/L7rskRQ.png" },
+    { nome: "Batata Frita Grande", preco: 15, img: "https://i.imgur.com/L7rskRQ.png" },
+    { nome: "Cachorro-Quente Simples", preco: 12, img: "https://i.imgur.com/5AzbNjB.png" },
+    { nome: "Cachorro-Quente Especial", preco: 15, img: "https://imgur.com/a3cb1e72-8f4d-427c-a80f-94b2f3f3abb2" },
+    { nome: "Refrigerante Lata", preco: 6, img: "https://i.imgur.com/6R6NAeA.png" },
+    { nome: "Refrigerante 2L", preco: 12, img: "https://i.imgur.com/fRTTlqb.png" },
+    { nome: "Suco Natural 500ml", preco: 8, img: "https://i.imgur.com/hfxYEZE.png" }
+  ];
+
+  const taxas = {
+    "Aventureiro": 5,
+    "América": 8,
+    "Boa Vista": 7,
+    "Centro": 10,
+    "Costa e Silva": 6,
+    "Iririú": 7,
+    "Outro": 12
+  };
+
+  let carrinho = [];
+  let total = 0;
+  let taxaAtual = 0;
+
+  const containerProdutos = document.getElementById("produtosContainer");
+  const listaCarrinho = document.getElementById("listaCarrinho");
+  const totalEl = document.getElementById("total");
+  const taxaEl = document.getElementById("taxaEntrega");
+  const bairroSelect = document.getElementById("bairroEntrega");
+
+  function criarProdutos() {
+    produtos.forEach((p, i) => {
+      let div = document.createElement("div");
+      div.className = "produto";
+
+      div.innerHTML = `
+        <img src="${p.img}" alt="${p.nome}" />
+        <h3>${p.nome}</h3>
+        <p>${p.descricao ? p.descricao : ''}</p>
+        <p><strong>R$ ${p.preco.toFixed(2)}</strong></p>
+        <button onclick="addCarrinho(${i})">Adicionar</button>
+      `;
+
+      containerProdutos.appendChild(div);
+    });
+  }
+
+  function addCarrinho(index) {
+    let item = produtos[index];
+    let existente = carrinho.find(i => i.nome === item.nome);
+    if (existente) {
+      existente.quantidade++;
+    } else {
+      carrinho.push({ ...item, quantidade: 1 });
+    }
+    atualizarCarrinho();
+  }
+
+  function atualizarCarrinho() {
+    listaCarrinho.innerHTML = '';
+    total = 0;
+    carrinho.forEach((item, i) => {
+      const subtotal = item.preco * item.quantidade;
+      total += subtotal;
+
+      let li = document.createElement('li');
+      li.textContent = `${item.quantidade}x ${item.nome} - R$ ${subtotal.toFixed(2)}`;
+
+      let btnRemover = document.createElement('button');
+      btnRemover.textContent = '🗑️';
+      btnRemover.className = 'remover';
+      btnRemover.onclick = () => removerItem(i);
+
+      li.appendChild(btnRemover);
+      listaCarrinho.appendChild(li);
+    });
+    atualizarTotalComTaxa();
+  }
+
+  function removerItem(index) {
+    carrinho.splice(index, 1);
+    atualizarCarrinho();
+  }
+
+  function limparCarrinho() {
+    carrinho = [];
+    atualizarCarrinho();
+  }
+
+  function calcularTaxa() {
+    let bairro = bairroSelect.value;
+    taxaAtual = taxas[bairro] || 12; // taxa padrão para bairros não listados
+    atualizarTotalComTaxa();
+  }
+
+  function atualizarTotalComTaxa() {
+    const totalComTaxa = total + taxaAtual;
+    totalEl.textContent = `Total: R$ ${total.toFixed(2)} + Taxa entrega: R$ ${taxaAtual.toFixed(2)} = R$ ${totalComTaxa.toFixed(2)}`;
+    taxaEl.textContent = `Taxa de entrega: R$ ${taxaAtual.toFixed(2)}`;
+  }
+
+  function enviarWhatsApp() {
+    if (carrinho.length === 0) {
+      alert('Adicione ao menos 1 item no carrinho.');
+      return;
+    }
+    if (!bairroSelect.value) {
+      alert('Por favor, selecione seu bairro para calcular a taxa de entrega.');
+      return;
+    }
+
+    let numero = '5547997212156';
+    let mensagem = 'Olá, gostaria de fazer o pedido:\\n';
+    carrinho.forEach(item => {
+      mensagem += `${item.quantidade}x ${item.nome} - R$ ${(item.preco * item.quantidade).toFixed(2)}\\n`;
+    });
+    mensagem += `Taxa de entrega (${bairroSelect.value}): R$ ${taxaAtual.toFixed(2)}\\n`;
+
+    let totalComTaxa = total + taxaAtual;
+    mensagem += `Total a pagar: R$ ${totalComTaxa.toFixed(2)}\\n`;
+
+    let obs = document.getElementById('observacao').value.trim();
+    if (obs !== '') {
+      mensagem += `Observações: ${obs}\\n`;
+    }
+    mensagem += 'Endereço para retirada: Rua Cegonhas, 105 - Aventureiro – Joinville/SC\\n';
+    mensagem += 'Obrigado!';
+
+    let url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+  }
+
+  criarProdutos();
+  atualizarCarrinho();
+  calcularTaxa();
+</script>
+
+</body>
+</html>
