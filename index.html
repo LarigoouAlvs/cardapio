@@ -3,68 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade Alta Densidade - 16 Cores</title>
+    <title>Soutex - Controle de Estoque Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        .color-dot {
-            aspect-ratio: 1 / 1;
-            border: 1px solid rgba(0,0,0,0.1);
-        }
+        .modal-overlay { background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .filter-scroll { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        .img-zoom { transition: transform 0.3s ease; }
+        .card-active:active { transform: scale(0.96); }
     </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body class="bg-slate-900 text-slate-100 font-sans hide-scroll">
 
-    <header class="p-4 bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
-        <h1 class="text-sm font-bold uppercase tracking-widest text-blue-400">Painel de Alta Densidade</h1>
-        <p class="text-[10px] text-gray-400">Visualizando 16 unidades por bloco</p>
+    <header class="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
+        <div class="flex justify-between items-center mb-3">
+            <div>
+                <h1 class="text-sm font-bold text-blue-400 uppercase tracking-tighter italic">SOUTEX_MANAGER</h1>
+                <p id="admin-status" class="text-[9px] text-slate-500 uppercase">Modo Online (Firebase)</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="limparEstoque()" class="bg-red-900/20 text-red-500 text-[10px] px-2 py-2 rounded-lg border border-red-800/30 transition">
+                    🗑️ LIMPAR
+                </button>
+                <label class="bg-blue-600 hover:bg-blue-500 text-white text-[10px] px-3 py-2 rounded-lg cursor-pointer transition flex items-center gap-1 font-bold">
+                    ➕ IMPORTAR EXCEL
+                    <input type="file" id="excel-input" class="hidden" accept=".xlsx, .xls">
+                </label>
+            </div>
+        </div>
+
+        <div class="filter-scroll flex gap-2 pb-1 hide-scroll" id="filter-bar">
+            <button onclick="filtrar('todos')" id="btn-todos" class="filter-btn bg-blue-600 text-[10px] px-4 py-1.5 rounded-full font-bold uppercase">Todos</button>
+            <div id="dynamic-filters" class="flex gap-2"></div>
+        </div>
     </header>
 
-    <main class="p-2 space-y-6">
-
-        <section>
-            <h2 class="text-xs font-bold mb-2 ml-1 text-gray-500 uppercase italic">Linha Luminos Fit (16 tons)</h2>
-            <div class="grid grid-cols-4 gap-1.5" id="grid-brilhosos"></div>
-        </section>
-
-        <section>
-            <h2 class="text-xs font-bold mb-2 ml-1 text-gray-500 uppercase italic">Linha Prisma (16 tons)</h2>
-            <div class="grid grid-cols-4 gap-1.5" id="grid-lisos"></div>
-        </section>
-
-        <section>
-            <h2 class="text-xs font-bold mb-2 ml-1 text-gray-500 uppercase italic">Linha Berlim (16 tons)</h2>
-            <div class="grid grid-cols-4 gap-1.5" id="grid-blackout"></div>
-        </section>
-
+    <main class="p-2 space-y-6" id="app-content">
+        <div class="text-center py-20 text-slate-500">
+            <p class="uppercase text-[10px] tracking-widest font-bold">Nenhum tecido carregado</p>
+            <p class="text-[9px] mt-2 italic">Suba um arquivo Excel para sincronizar com o Firebase</p>
+        </div>
     </main>
 
-    <script>
-        function generateRandomHex() {
-            return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-        }
+    <div id="modal-senha" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl w-full max-w-xs">
+            <h2 id="modal-title" class="text-center font-bold mb-4 text-blue-400">Controle de Estoque</h2>
+            <div id="auth-section">
+                <input type="password" id="input-senha" placeholder="Senha do Admin" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-lg mb-4 text-center text-white focus:border-blue-500 outline-none">
+                <button onclick="verificarSenha()" class="w-full bg-blue-600 p-3 rounded-lg font-bold">Acessar Painel</button>
+            </div>
+            <div id="edit-section" class="hidden text-center">
+                <div class="flex items-center justify-around mb-6 text-2xl font-black">
+                    <button onclick="alterarEstoque(-10)" class="w-12 h-12 bg-slate-700 rounded-full border border-slate-600 active:bg-red-900">-10</button>
+                    <span id="valor-estoque-modal" class="text-3xl text-blue-400">0</span>
+                    <button onclick="alterarEstoque(10)" class="w-12 h-12 bg-slate-700 rounded-full border border-slate-600 active:bg-green-900">+10</button>
+                </div>
+                <button onclick="fecharModal()" class="w-full bg-blue-600 p-3 rounded-lg font-bold italic uppercase tracking-tighter text-sm">Sincronizar e Sair</button>
+            </div>
+            <button onclick="fecharModal()" class="w-full mt-4 text-slate-500 text-[10px] uppercase tracking-widest">Cancelar</button>
+        </div>
+    </div>
 
-        function renderDenseGrid(containerId, label) {
-            const container = document.getElementById(containerId);
-            for (let i = 1; i <= 16; i++) {
-                const color = generateRandomHex();
-                const stock = Math.floor(Math.random() * 150);
-                
-                container.innerHTML += `
-                    <div class="bg-gray-800 rounded-md overflow-hidden border border-gray-700">
-                        <div class="color-dot w-full" style="background-color: ${color}"></div>
-                        <div class="p-1 text-center">
-                            <p class="text-[8px] font-medium truncate text-gray-300">${label} ${i}</p>
-                            <p class="text-[9px] font-black ${stock < 30 ? 'text-red-400' : 'text-green-400'}">${stock}m</p>
-                        </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot, query, deleteDoc } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // CONFIGURAÇÃO DO SEU PROJETO
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJgHz4GGt1kPq3md5wcVdtYUlqij1i4PE",
+            authDomain: "soutex-e9d93.firebaseapp.com",
+            projectId: "soutex-e9d93",
+            storageBucket: "soutex-e9d93.firebasestorage.app",
+            messagingSenderId: "755619229918",
+            appId: "1:755619229918:web:a686d19782dc759946124f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tecidosCol = collection(db, "tecidos");
+
+        let tecidos = [];
+        let itemSelecionado = null;
+        let filtroAtual = 'todos';
+        let isAdmin = false;
+        const SENHA_MESTRA = "1234";
+
+        // --- REAL-TIME SYNC ---
+        onSnapshot(query(tecidosCol), (snapshot) => {
+            tecidos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            render();
+            atualizarBotoesFiltro();
+        });
+
+        // --- RENDERIZAÇÃO ---
+        window.render = function() {
+            const appContent = document.getElementById('app-content');
+            if (tecidos.length === 0) {
+                appContent.innerHTML = '<div class="text-center py-20 text-slate-500 text-[10px] uppercase font-bold tracking-widest">Estoque Cloud Vazio</div>';
+                return;
+            }
+
+            appContent.innerHTML = '';
+            const dadosFiltrados = filtroAtual === 'todos' ? tecidos : tecidos.filter(t => t.categoria === filtroAtual);
+            const subcategorias = [...new Set(dadosFiltrados.map(t => t.sub))];
+
+            subcategorias.forEach(sub => {
+                const section = document.createElement('section');
+                section.innerHTML = `
+                    <h2 class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1 border-l-2 border-blue-500 pl-2">${sub}</h2>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        ${dadosFiltrados.filter(t => t.sub === sub).map(t => `
+                            <div onclick="abrirModal('${t.id}')" class="bg-slate-800 rounded-md overflow-hidden border border-slate-700 card-active transition shadow-lg">
+                                <div class="aspect-square w-full relative bg-slate-700 overflow-hidden">
+                                    <div class="absolute inset-0" style="background-color: ${t.hex}"></div>
+                                    
+                                    ${t.url ? `<img src="${t.url}" class="absolute inset-0 w-full h-full object-cover z-10" onerror="this.parentElement.style.backgroundColor='${t.hex}'; this.remove();">` : ''}
+                                    
+                                    <span class="absolute top-0 right-0 bg-black/40 text-[5px] px-1 font-mono text-white/70 z-20">${t.hex}</span>
+                                </div>
+                                <div class="p-1 text-center">
+                                    <p class="text-[8px] font-bold text-slate-300 truncate leading-tight">${t.cor}</p>
+                                    <p class="text-[10px] font-black mt-0.5 ${t.estoque < 40 ? 'text-red-400' : 'text-green-400'}">
+                                        ${t.estoque}<span class="text-[7px] ml-0.5 font-normal uppercase">m</span>
+                                    </p>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
-            }
+                appContent.appendChild(section);
+            });
         }
 
-        // Inicializar as grades
-        renderDenseGrid('grid-brilhosos', 'BR');
-        renderDenseGrid('grid-lisos', 'LS');
-        renderDenseGrid('grid-blackout', 'BK');
+        // --- FILTROS ---
+        window.filtrar = function(categoria) {
+            filtroAtual = categoria;
+            render();
+            atualizarBotoesFiltro();
+        }
+
+        function atualizarBotoesFiltro() {
+            const filterContainer = document.getElementById('dynamic-filters');
+            const categorias = [...new Set(tecidos.map(t => t.categoria))];
+            const btnTodos = document.getElementById('btn-todos');
+            
+            btnTodos.className = `filter-btn text-[10px] px-4 py-1.5 rounded-full font-bold uppercase transition ${filtroAtual === 'todos' ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 text-slate-400'}`;
+
+            filterContainer.innerHTML = categorias.map(cat => `
+                <button onclick="filtrar('${cat}')" 
+                        class="filter-btn text-[10px] px-4 py-1.5 rounded-full font-bold uppercase transition
+                        ${filtroAtual === cat ? 'bg-blue-600 ring-2 ring-blue-400 text-white' : 'bg-slate-700 text-slate-400'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        // --- IMPORTAÇÃO EXCEL PARA FIREBASE ---
+        document.getElementById('excel-input').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                const workbook = XLSX.read(evt.target.result, { type: 'binary' });
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                let count = 0;
+                for (const row of json) {
+                    await addDoc(tecidosCol, {
+                        categoria: row.Categoria || 'Geral',
+                        sub: row.Subcategoria || 'Padrão',
+                        cor: row.Cor || 'Sem Nome',
+                        hex: row.Hex || '#ffffff',
+                        url: row.URL || '', // Puxa o link da imagem da coluna URL
+                        estoque: parseInt(row.Quantidade) || 0,
+                        data: Date.now()
+                    });
+                    count++;
+                }
+                alert(`${count} itens sincronizados com a Nuvem Soutex!`);
+            };
+            reader.readAsBinaryString(file);
+            e.target.value = '';
+        });
+
+        // --- LÓGICA DO MODAL (ESTOQUE) ---
+        window.abrirModal = function(id) {
+            itemSelecionado = tecidos.find(t => t.id === id);
+            document.getElementById('modal-senha').classList.remove('hidden');
+            if (isAdmin) mostrarEdicao();
+        }
+
+        window.verificarSenha = function() {
+            if (document.getElementById('input-senha').value === SENHA_MESTRA) {
+                isAdmin = true;
+                document.getElementById('admin-status').innerText = "MODO ADMINISTRADOR";
+                document.getElementById('admin-status').className = "text-[9px] text-green-400 font-bold uppercase tracking-widest";
+                mostrarEdicao();
+            } else { alert("Senha Incorreta!"); }
+        }
+
+        function mostrarEdicao() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('edit-section').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = `${itemSelecionado.sub} - ${itemSelecionado.cor}`;
+            document.getElementById('valor-estoque-modal').innerText = itemSelecionado.estoque + "m";
+        }
+
+        window.alterarEstoque = async function(qtd) {
+            const novoEstoque = Math.max(0, itemSelecionado.estoque + qtd);
+            itemSelecionado.estoque = novoEstoque;
+            document.getElementById('valor-estoque-modal').innerText = novoEstoque + "m";
+            
+            // Atualiza no Firebase instantaneamente
+            const docRef = doc(db, "tecidos", itemSelecionado.id);
+            await updateDoc(docRef, { estoque: novoEstoque });
+        }
+
+        window.fecharModal = function() {
+            document.getElementById('modal-senha').classList.add('hidden');
+            document.getElementById('input-senha').value = "";
+        }
+
+        window.limparEstoque = async function() {
+            if(confirm("ATENÇÃO: Isso apagará TODOS os dados da nuvem. Confirmar?")) {
+                const snapshot = await getDocs(tecidosCol);
+                const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, "tecidos", d.id)));
+                await Promise.all(deletePromises);
+                alert("Nuvem limpa!");
+            }
+        }
     </script>
 </body>
 </html>
