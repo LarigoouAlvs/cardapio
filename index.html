@@ -3,56 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soutex - Central de Rolos</title>
+    <title>Soutex - Grid 16</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        .filter-scroll { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        /* Ajuste para garantir que os cards caibam 4 por linha em telas pequenas */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .filter-scroll { overflow-x: auto; white-space: nowrap; }
         .hide-scroll::-webkit-scrollbar { display: none; }
-        .modal { display: none; position: fixed; z-index: 50; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+        .modal { display: none; position: fixed; z-index: 100; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(6px); }
         .modal.active { display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans hide-scroll">
+<body class="bg-black text-slate-100 font-sans hide-scroll">
 
     <div id="ajuste-modal" class="modal p-4">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 id="modal-titulo" class="text-center font-black italic text-blue-500 uppercase mb-4 text-sm">Ajustar Estoque</h3>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl w-full max-w-xs shadow-2xl">
+            <h3 id="modal-titulo" class="text-center font-black text-blue-500 uppercase mb-4 text-xs tracking-widest">Tecido</h3>
             
-            <div class="flex items-center justify-between gap-4 mb-6">
-                <button onclick="mudarValor(-15)" class="bg-red-600 hover:bg-red-500 w-12 h-12 rounded-full font-black text-xl">-15</button>
+            <div class="flex items-center justify-between gap-3 mb-6">
+                <button onclick="mudarValor(-15)" class="bg-red-600 active:bg-red-700 w-12 h-12 rounded-full font-black text-lg shadow-lg">-15</button>
                 <div class="text-center">
-                    <div id="modal-peso" class="text-3xl font-black">0.0</div>
-                    <div class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Quilos Totais</div>
+                    <div id="modal-peso" class="text-3xl font-black text-white">0.0</div>
+                    <div class="text-[9px] text-slate-500 uppercase font-bold">Quilos (Kg)</div>
                 </div>
-                <button onclick="mudarValor(15)" class="bg-green-600 hover:bg-green-500 w-12 h-12 rounded-full font-black text-xl">+15</button>
+                <button onclick="mudarValor(15)" class="bg-green-600 active:bg-green-700 w-12 h-12 rounded-full font-black text-lg shadow-lg">+15</button>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="fecharModal()" class="bg-slate-800 py-3 rounded-xl font-bold text-[10px] uppercase">Cancelar</button>
-                <button onclick="salvarAjuste()" class="bg-blue-600 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/40">Confirmar Senha</button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="fecharModal()" class="bg-slate-800 p-3 rounded-xl font-bold text-[9px] uppercase">Sair</button>
+                <button onclick="salvarAjuste()" class="bg-blue-600 p-3 rounded-xl font-black text-[9px] uppercase shadow-blue-900/40 shadow-md">Salvar</button>
             </div>
         </div>
     </div>
 
-    <header class="p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
-        <div class="flex justify-between items-center mb-3">
-            <div>
-                <h1 class="text-sm font-black text-blue-500 italic">SOUTEX_PRO</h1>
-                <p class="text-[8px] text-slate-500 uppercase font-bold tracking-[0.3em]">Clique no tecido para ajustar</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="limparTudo()" class="bg-red-500/10 text-red-500 text-[9px] px-2 py-2 rounded-md border border-red-500/20 font-bold uppercase tracking-tighter">Zerar Banco</button>
-                <label class="bg-blue-600 text-white text-[9px] px-4 py-2 rounded-md cursor-pointer font-black italic">
-                    IMPORTAR EXCEL
-                    <input type="file" id="excel-input" class="hidden" accept=".xlsx, .xls">
+    <header class="p-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-[11px] font-black text-blue-500 italic">SOUTEX_16GRID</h1>
+            <div class="flex gap-1">
+                <button onclick="limparTudo()" class="text-[8px] border border-red-500/30 text-red-500 px-2 py-1 rounded">ZERAR</button>
+                <label class="bg-blue-600 text-[8px] px-3 py-1.5 rounded font-black cursor-pointer">
+                    EXCEL <input type="file" id="excel-input" class="hidden" accept=".xlsx, .xls">
                 </label>
             </div>
         </div>
         <div id="dynamic-filters" class="flex gap-2 overflow-x-auto pb-1 hide-scroll"></div>
     </header>
 
-    <main class="p-3 space-y-8" id="app-content"></main>
+    <main class="p-2" id="app-content"></main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -74,7 +76,11 @@
         const SENHA_MESTRA = "1234";
         const KG_POR_ROLO = 15;
 
-        // --- DICIONÁRIO COMPLETO (CARTELAS 24/25 E 25/26) ---
+        let tecidos = [];
+        let filtroAtual = 'todos';
+        let itemSelecionado = null;
+
+                // --- DICIONÁRIO COMPLETO (CARTELAS 24/25 E 25/26) ---
         const CONVERSOR_PANTONE = {
             // Básicos e Neutros [cite: 5, 6, 79, 80, 144, 74]
             "003": "#FFFFFF", "110105": "#F8F0E3", "50210": "#1A1A1A", "002": "#1A1A1A", "502477": "#404633", "150947": "#8B8680",
@@ -90,43 +96,32 @@
             "190814": "#3A2A21", "191432": "#4E3E38", "191220": "#6D5344", "181222": "#5E4334", "171230": "#8D6E5D", "181425": "#4B2C20", "161318": "#A47754", "144203": "#B8B8B8", "173802": "#959595", "550888": "#6B7177", "550834": "#4A4E52", "193906": "#353839"
         };
 
-        let tecidos = [];
-        let filtroAtual = 'todos';
-        let itemSelecionado = null;
-
         onSnapshot(query(tecidosCol), (snapshot) => {
             tecidos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             render();
             atualizarFiltros();
         });
 
-        // LOGICA DO MODAL
         window.abrirModal = (id, peso, nome) => {
-            itemSelecionado = { id, pesoOriginal: peso, pesoAjustado: peso, nome };
+            itemSelecionado = { id, pesoAjustado: peso, nome };
             document.getElementById('modal-titulo').innerText = nome;
             document.getElementById('modal-peso').innerText = peso.toFixed(1);
             document.getElementById('ajuste-modal').classList.add('active');
         };
 
-        window.mudarValor = (valor) => {
-            if(!itemSelecionado) return;
-            itemSelecionado.pesoAjustado = Math.max(0, itemSelecionado.pesoAjustado + valor);
+        window.mudarValor = (v) => {
+            itemSelecionado.pesoAjustado = Math.max(0, itemSelecionado.pesoAjustado + v);
             document.getElementById('modal-peso').innerText = itemSelecionado.pesoAjustado.toFixed(1);
         };
 
-        window.fecharModal = () => {
-            document.getElementById('ajuste-modal').classList.remove('active');
-            itemSelecionado = null;
-        };
+        window.fecharModal = () => document.getElementById('ajuste-modal').classList.remove('active');
 
         window.salvarAjuste = async () => {
-            const pw = prompt("Digite a senha para confirmar alteração:");
+            const pw = prompt("Senha:");
             if (pw === SENHA_MESTRA) {
-                await updateDoc(doc(db, "tecidos", itemSelecionado.id), { 
-                    quantidadeKg: itemSelecionado.pesoAjustado 
-                });
+                await updateDoc(doc(db, "tecidos", itemSelecionado.id), { quantidadeKg: itemSelecionado.pesoAjustado });
                 fecharModal();
-            } else if (pw !== null) alert("Senha incorreta!");
+            }
         };
 
         window.render = function() {
@@ -137,32 +132,35 @@
 
             subs.forEach(sub => {
                 const section = document.createElement('section');
-                section.innerHTML = `<h2 class="text-[10px] font-black text-slate-600 uppercase mb-4 border-l-2 border-blue-600 pl-3 tracking-widest">${sub}</h2>`;
+                section.className = "mb-6";
+                section.innerHTML = `<h2 class="text-[9px] font-bold text-slate-500 uppercase mb-2 ml-1 tracking-tighter">${sub}</h2>`;
+                
                 const grid = document.createElement('div');
-                grid.className = "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3";
+                grid.className = "color-grid";
                 
                 dados.filter(t => t.sub === sub).forEach(t => {
-                    const codLimpo = String(t.hex).replace(/\D/g, '').trim();
-                    const corHex = CONVERSOR_PANTONE[codLimpo] || "#334155";
+                    const cod = String(t.hex).replace(/\D/g, '');
+                    const corHex = CONVERSOR_PANTONE[cod] || "#334155";
                     const rolos = Math.floor(t.quantidadeKg / KG_POR_ROLO);
                     
                     grid.innerHTML += `
-                        <div onclick="abrirModal('${t.id}', ${t.quantidadeKg}, '${t.cor}')" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden cursor-pointer active:scale-95 transition-all">
-                            <div class="aspect-square" style="background-color: ${corHex}"></div>
-                            <div class="p-2">
-                                <p class="text-[8px] font-bold truncate">${t.cor}</p>
-                                <div class="flex justify-between items-end mt-1">
-                                    <span class="text-blue-400 font-black text-sm">${rolos}R</span>
-                                    <span class="text-[7px] text-slate-500 font-bold">${t.quantidadeKg.toFixed(1)}kg</span>
+                        <div onclick="abrirModal('${t.id}', ${t.quantidadeKg}, '${t.cor}')" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+                            <div class="aspect-square w-full" style="background-color: ${corHex}"></div>
+                            <div class="p-1.5">
+                                <p class="text-[7px] font-bold truncate text-slate-400 uppercase leading-none mb-1">${t.cor}</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-blue-400">${rolos}R</span>
+                                    <span class="text-[6px] text-slate-600 font-bold">${t.quantidadeKg.toFixed(0)}k</span>
                                 </div>
                             </div>
                         </div>`;
                 });
-                container.appendChild(section);
                 section.appendChild(grid);
+                container.appendChild(section);
             });
         };
 
+        // Importação Excel Corrigida (Peso Direto)
         document.getElementById('excel-input').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             const reader = new FileReader();
@@ -170,40 +168,36 @@
                 const workbook = XLSX.read(evt.target.result, { type: 'binary' });
                 const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 for (const row of json) {
-                    const hexOriginal = String(row.Hex || '').trim();
-                    const codPantone = hexOriginal.match(/\d+/) ? hexOriginal.match(/\d+/)[0] : hexOriginal;
-                    const pesoKg = parseFloat(String(row.Quantidade || 0).replace(',', '.'));
-
+                    const peso = parseFloat(String(row.Quantidade || 0).replace(',', '.'));
                     const dadosObj = {
                         categoria: String(row.Categoria || 'GERAL').toUpperCase().trim(),
                         sub: String(row.Subcategoria || 'GERAL').toUpperCase().trim(),
                         cor: String(row.Cor || 'SEM NOME').toUpperCase().trim(),
-                        hex: codPantone,
-                        quantidadeKg: pesoKg
+                        hex: String(row.Hex || '').match(/\d+/)?.toString() || "",
+                        quantidadeKg: peso
                     };
-
-                    const existente = tecidos.find(t => t.cor === dadosObj.cor && t.sub === dadosObj.sub);
-                    if (existente) await updateDoc(doc(db, "tecidos", existente.id), dadosObj);
+                    const existe = tecidos.find(t => t.cor === dadosObj.cor && t.sub === dadosObj.sub);
+                    if (existe) await updateDoc(doc(db, "tecidos", existe.id), dadosObj);
                     else await addDoc(tecidosCol, dadosObj);
                 }
-                alert("Estoque Atualizado!");
+                alert("Importado!");
             };
             reader.readAsBinaryString(file);
         });
 
-        window.filtrar = (cat) => { filtroAtual = cat; render(); atualizarFiltros(); };
+        window.filtrar = (c) => { filtroAtual = c; render(); atualizarFiltros(); };
         function atualizarFiltros() {
             const container = document.getElementById('dynamic-filters');
             const cats = ['todos', ...new Set(tecidos.map(t => t.categoria))];
             container.innerHTML = cats.map(c => `
-                <button onclick="filtrar('${c}')" class="${filtroAtual === c ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'} text-[9px] px-4 py-1.5 rounded-full font-bold uppercase transition-all whitespace-nowrap">
+                <button onclick="filtrar('${c}')" class="${filtroAtual === c ? 'bg-blue-600' : 'bg-slate-800'} text-[8px] px-3 py-1 rounded-full font-bold uppercase whitespace-nowrap">
                     ${c}
                 </button>
             `).join('');
         }
 
         window.limparTudo = async () => {
-            if (prompt("Senha para ZERAR TUDO:") === SENHA_MESTRA) {
+            if (prompt("Senha:") === SENHA_MESTRA) {
                 const snap = await getDocs(tecidosCol);
                 for (const d of snap.docs) await deleteDoc(doc(db, "tecidos", d.id));
             }
