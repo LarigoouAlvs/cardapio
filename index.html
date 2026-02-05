@@ -56,18 +56,21 @@
 
     <main class="p-2" id="app-content"></main>
 
-    <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore, collection, addDoc, doc,
+  updateDoc, onSnapshot, query, deleteDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
-    apiKey: "AIzaSyBJgHz4GGt1kPq3md5wcVdtYUlqij1i4PE",
-    authDomain: "soutex-e9d93.firebaseapp.com",
-    projectId: "soutex-e9d93",
-    storageBucket: "soutex-e9d93.firebasestorage.app",
-    messagingSenderId: "755619229918",
-    appId: "1:755619229918:web:a686d19782dc759946124f"
+  apiKey: "AIzaSyBJgHz4GGt1kPq3md5wcVdtYUlqij1i4PE",
+  authDomain: "soutex-e9d93.firebaseapp.com",
+  projectId: "soutex-e9d93",
+  storageBucket: "soutex-e9d93.firebasestorage.app",
+  messagingSenderId: "755619229918",
+  appId: "1:755619229918:web:a686d19782dc759946124f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -82,171 +85,300 @@ let tecidos = [];
 let filtroAtual = "todos";
 let itemSelecionado = null;
 
-/* ================= IMAGENS ================= */
+/* ================= UTIL ================= */
 function normalizarTexto(txt) {
-    return String(txt)
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_")
-        .toUpperCase()
-        .trim();
+  return String(txt)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .toUpperCase()
+    .trim();
 }
 
-function getImagemProduto(sub, cor) {
-    return `imagens/tecidos/${normalizarTexto(sub)}_${normalizarTexto(cor)}.jpg`;
+/* ================= IMAGENS ================= */
+function getImagemPrincipal(sub, cor) {
+  return `imagens/tecidos/${normalizarTexto(sub)}_${normalizarTexto(cor)}.jpg`;
+}
+function getImagemSecundaria(sub, cor) {
+  return `imagens/tecidos/${normalizarTexto(sub)}_${normalizarTexto(cor)}_2.jpg`;
 }
 
-                // --- DICIONÁRIO COMPLETO (CARTELAS 24/25 E 25/26) ---
-        const CONVERSOR_PANTONE = {
-            // Básicos e Neutros [cite: 5, 6, 79, 80, 144, 74]
-            "003": "#FFFFFF", "110105": "#F8F0E3", "50210": "#1A1A1A", "002": "#1A1A1A", "502477": "#404633", "150947": "#8B8680",
-            // Amarelos e Laranjas [cite: 15, 18, 19, 81, 85, 86, 87, 92]
-            "160928": "#C5A059", "120824": "#F6D7A7", "140957": "#F2D06B", "161054": "#FFD700", "130650": "#DFFF00", "131023": "#FFBE98", "161358": "#F96332", "161449": "#B35A42", "181561": "#E64E2E", "201353": "#A67B5B",
-            // Rosas e Roxos [cite: 8, 23, 24, 26, 28, 30, 101, 107, 109, 111, 116, 40]
-            "69572": "#FFB7D5", "121708": "#F1D2D8", "171937": "#FF3381", "153214": "#D975A5", "163118": "#BB548E", "A65": "#FC8EAC", "40549": "#FF1493", "30192": "#FF7F50", "171930": "#E45E8C", "172036": "#AD1C57", "181852": "#BD3D3E", "181663": "#BD3D3E", "191555": "#6D232F", "01218": "#4A101C", "192033": "#6B322E", "153716": "#B39FBD", "650200": "#632A7E", "183324": "#8B498B", "1546": "#6D3192", "192816": "#3D2431", "450924": "#E0B0FF",
-            // Verdes [cite: 44, 45, 46, 124, 47, 48, 49, 50]
-            "155218": "#98FF98", "146330": "#85C685", "175335": "#4AB081", "156428": "#B7D5AC", "170210": "#4A5D23", "160430": "#77B17E", "190323": "#4B5332", "195232": "#134237",
-            // Azuis [cite: 51, 52, 53, 54, 55, 56, 132, 57, 58]
-            "144318": "#99D3DF", "154225": "#7BA0BA", "164535": "#6BA6CC", "164411": "#82898F", "174028": "#527694", "901068": "#002366", "900783": "#003399", "194342": "#2C4053", "193933": "#232D4B",
-            // Marrons e Cinzas [cite: 59, 60, 61, 62, 63, 138, 65, 68, 69, 72, 73, 143]
-            "190814": "#3A2A21", "191432": "#4E3E38", "191220": "#6D5344", "181222": "#5E4334", "171230": "#8D6E5D", "181425": "#4B2C20", "161318": "#A47754", "144203": "#B8B8B8", "173802": "#959595", "550888": "#6B7177", "550834": "#4A4E52", "193906": "#353839"
-        };
+/* ================= MAPA DE PRODUTOS ================= */
+const MAPA_PRODUTOS = {
+  "1510021015": { tecido: "QUADRILE", categoria: "CAMISARIA" },
+  "151501021":  { tecido: "INTRA", categoria: "CAMISARIA" },
+  "151501047":  { tecido: "BERLIM", categoria: "BLACKOUT" },
 
-/* ================= FIREBASE REALTIME ================= */
+  "1515010548": { tecido: "JAC_TRIF_MESCLA", categoria: "JACQUARD" },
+  "151501061":  { tecido: "PRESS", categoria: "NAO_COLOCAR" },
+
+  "1515010744": { tecido: "CALIFORNIA", categoria: "PROMOCOES" },
+  "1515011287": { tecido: "CANNES", categoria: "CAMISARIA" },
+  "1515011360": { tecido: "CALIFORNIA_EMPIRE", categoria: "PROMOCOES" },
+  "1515011363": { tecido: "CALIFORNIA_VENICE", categoria: "PROMOCOES" },
+
+  "1515011398": { tecido: "HAVAI_UV", categoria: "LISOS" },
+  "151501173":  { tecido: "ASTRO", categoria: "CAMISARIA" },
+  "1515011984": { tecido: "FORRO", categoria: "LISOS" },
+
+  "1515012035": { tecido: "PARIS", categoria: "BLACKOUT" },
+  "1515012068": { tecido: "MOSCOU_PES_PT", categoria: "BLACKOUT" },
+
+  "1515012094": { tecido: "JAC_FUSION_1153", categoria: "JACQUARD" },
+  "1515012732": { tecido: "JACQUARD_FUSION_STJ105", categoria: "JACQUARD" },
+
+  "1515013260": { tecido: "CALIFORNIA_ABC16", categoria: "PROMOCOES" },
+  "1515013618": { tecido: "ACTIVE_POWER", categoria: "LISOS" },
+
+  "1515013728": { tecido: "LUMINOUS_FIT", categoria: "BRILHOSOS" },
+  "1515014195": { tecido: "VIVANCE_FIT", categoria: "BRILHOSOS" },
+  "1515014235": { tecido: "LUMINOUS_BEACH", categoria: "BRILHOSOS" },
+  "1515014243": { tecido: "ILUMINAT_FIT", categoria: "BRILHOSOS" },
+  "1515014505": { tecido: "VIVANCE_BEACH", categoria: "BRILHOSOS" },
+
+  "1515014508": { tecido: "JAC_TEX_CLEAN_TMJ557", categoria: "JACQUARD" },
+  "1515014531": { tecido: "JAC_CLASSIC_BRILHO", categoria: "JACQUARD" },
+  "1515014547": { tecido: "DIAMANTE", categoria: "BRILHOSOS" },
+  "1515014580": { tecido: "DIAMANTE_BEACH", categoria: "BRILHOSOS" },
+
+  "1515014609": { tecido: "JAC_LUX_STJ105", categoria: "JACQUARD" },
+  "1515014703": { tecido: "DUETO", categoria: "BRILHOSOS" },
+
+  "1515014764": { tecido: "DUPLEX_POWER", categoria: "LISOS" },
+  "1515014767": { tecido: "JAC_LUX_ABJH13", categoria: "JACQUARD" },
+
+  "1515014842": { tecido: "ILUMINAT_BEACH", categoria: "BRILHOSOS" },
+
+  "1515015006": { tecido: "JAC_LUX_INVERT_ABJ536G2", categoria: "JACQUARD" },
+  "1515015009": { tecido: "NEW_YORK", categoria: "BLACKOUT" },
+  "1515015010": { tecido: "CRISTAL", categoria: "BRILHOSOS" },
+
+  "1515015101": { tecido: "PARIS_LIGHT", categoria: "LISOS" },
+  "1515015129": { tecido: "PRISMA", categoria: "LISOS" },
+
+  "1515015151": { tecido: "JACQUARD_LUX_NS030", categoria: "JACQUARD" },
+
+  "1515015223": { tecido: "MOVE", categoria: "CAMISARIA" },
+
+  "1515015355": { tecido: "JAC_LUX_ABJL56B", categoria: "JACQUARD" },
+  "1515015356": { tecido: "JAC_LUX_ABJL57", categoria: "JACQUARD" },
+
+  "1515015552": { tecido: "NEW_YORK_LIGHT", categoria: "BLACKOUT" },
+
+  "1515015614": { tecido: "BERLIM_MAQ_10", categoria: "BLACKOUT" },
+  "1515015615": { tecido: "MOSCOU", categoria: "BLACKOUT" },
+  "1515015617": { tecido: "BERLIM_OPACO_MAQ_10", categoria: "BLACKOUT" },
+
+  "1515015767": { tecido: "CANNES_140", categoria: "CAMISARIA" },
+
+  "151501814":  { tecido: "CROSS_UV", categoria: "LISOS" },
+  "151501934":  { tecido: "JERSEY_POWER_CASPER", categoria: "JACQUARD" },
+  "151502082":  { tecido: "BERLIM_LIGHT", categoria: "BLACKOUT" },
+
+  "1515014850": { tecido: "CANNES_BRILHO", categoria: "CAMISARIA" },
+  "151501984":  { tecido: "ENERGY", categoria: "CAMISARIA" },
+
+  "1515014928": { tecido: "JERSEY_POWER_MICRON", categoria: "JACQUARD" },
+
+  "1515014378": { tecido: "HAVAI_DIGITAL_UV_AVESSO_ST220", categoria: "PROMOCOES" },
+  "1515013205": { tecido: "HAVAI_DIGITAL_UV_AB487", categoria: "PROMOCOES" },
+  "1515014399": { tecido: "SILK_DIGITAL_UV_AB1907_V1", categoria: "PROMOCOES" },
+  "1515014394": { tecido: "HAVAI_DIGITAL_UV_AVESSO_CD031_V2", categoria: "PROMOCOES" },
+
+  "1515012690": { tecido: "CROSS_DIGITAL_UV_CL56_V1", categoria: "PROMOCOES" },
+  "1515015494": { tecido: "CROSS_DIGITAL_UV_AB4149_V1", categoria: "PROMOCOES" },
+  "1515015727": { tecido: "CROSS_DIGITAL_UV_AB4207_V3", categoria: "PROMOCOES" }
+};
+
+/* ================= REALTIME ================= */
 onSnapshot(query(tecidosCol), snap => {
-    tecidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    render();
-    atualizarFiltros();
+  tecidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  render();
+  atualizarFiltros();
 });
 
 /* ================= MODAL ================= */
-window.abrirModal = (id, pesoTexto, nome) => {
-    itemSelecionado = {
-        id,
-        pesoTexto,
-        pesoNumero: Number(String(pesoTexto).replace(",", ".")),
-        nome
-    };
-    document.getElementById("modal-titulo").innerText = nome;
-    document.getElementById("modal-peso").innerText = itemSelecionado.pesoTexto;
-    document.getElementById("ajuste-modal").classList.add("active");
+window.abrirModal = (id, peso, nome) => {
+  itemSelecionado = {
+    id,
+    pesoTexto: peso,
+    pesoNumero: Number(String(peso).replace(",", ".")),
+    nome
+  };
+  document.getElementById("modal-titulo").innerText = nome;
+  document.getElementById("modal-peso").innerText = peso;
+  document.getElementById("ajuste-modal").classList.add("active");
 };
 
 window.mudarValor = v => {
-    itemSelecionado.pesoNumero = Math.max(0, itemSelecionado.pesoNumero + v);
-    itemSelecionado.pesoTexto = itemSelecionado.pesoNumero.toString().replace(".", ",");
-    document.getElementById("modal-peso").innerText = itemSelecionado.pesoTexto;
+  itemSelecionado.pesoNumero = Math.max(0, itemSelecionado.pesoNumero + v);
+  itemSelecionado.pesoTexto = itemSelecionado.pesoNumero.toString().replace(".", ",");
+  document.getElementById("modal-peso").innerText = itemSelecionado.pesoTexto;
 };
 
 window.fecharModal = () =>
-    document.getElementById("ajuste-modal").classList.remove("active");
+  document.getElementById("ajuste-modal").classList.remove("active");
 
 window.salvarAjuste = async () => {
-    if (prompt("Senha:") === SENHA_MESTRA) {
-        await updateDoc(doc(db, "tecidos", itemSelecionado.id), {
-            quantidadeKg: itemSelecionado.pesoTexto
-        });
-        fecharModal();
-    }
+  if (prompt("Senha:") === SENHA_MESTRA) {
+    await updateDoc(doc(db, "tecidos", itemSelecionado.id), {
+      quantidadeKg: itemSelecionado.pesoTexto
+    });
+    fecharModal();
+  }
 };
 
 /* ================= RENDER ================= */
-window.render = function () {
-    const app = document.getElementById("app-content");
-    app.innerHTML = "";
+function render() {
+  const app = document.getElementById("app-content");
+  app.innerHTML = "";
 
-    const dados = filtroAtual === "todos" ? tecidos : tecidos.filter(t => t.categoria === filtroAtual);
-    const subs = [...new Set(dados.map(t => t.sub))].sort();
+  const dados = filtroAtual === "todos"
+    ? tecidos
+    : tecidos.filter(t => t.categoria === filtroAtual);
 
-    subs.forEach(sub => {
-        const section = document.createElement("section");
-        section.innerHTML = `<h2 class="text-[9px] text-slate-400 font-bold mb-1 ml-1">${sub}</h2>`;
+  const subs = [...new Set(dados.map(t => t.sub))].sort();
 
-        const grid = document.createElement("div");
-        grid.className = "color-grid";
+  subs.forEach(sub => {
+    const section = document.createElement("section");
+    section.innerHTML = `<h2 class="text-[9px] text-slate-400 font-bold mb-1 ml-1">${sub}</h2>`;
 
-        dados.filter(t => t.sub === sub).forEach(t => {
-            const img = getImagemProduto(t.sub, t.cor);
-            const hex = CONVERSOR_PANTONE[String(t.hex).replace(/\D/g, "")] || "#1f2937";
-            const kgNum = Number(String(t.quantidadeKg).replace(",", "."));
-            const rolos = Math.floor(kgNum / KG_POR_ROLO);
+    const grid = document.createElement("div");
+    grid.className = "color-grid";
 
-            grid.innerHTML += `
-            <div onclick="abrirModal('${t.id}','${t.quantidadeKg}','${t.cor}')"
-                 class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-                 
-                <div class="aspect-square w-full">
-    <img 
-        src="${img}" 
-        alt="${t.cor}"
-        class="w-full h-full object-cover"
-        onerror="this.src='imagens/tecidos/sem-imagem.jpg'">
-</div>
+    dados.filter(t => t.sub === sub).forEach(t => {
+      const kgNum = Number(String(t.quantidadeKg).replace(",", "."));
+      const rolos = Math.floor(kgNum / KG_POR_ROLO);
 
+      grid.innerHTML += `
+      <div onclick="abrirModal('${t.id}','${t.quantidadeKg}','${t.cor}')"
+        class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 
-                <div class="p-1.5">
-                    <p class="text-[7px] text-slate-400 font-bold truncate">${t.cor}</p>
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] text-blue-400 font-black">${rolos}R</span>
-                        <span class="text-[7px] text-slate-500 font-bold">${t.quantidadeKg}k</span>
-                    </div>
-                </div>
-            </div>`;
-        });
+        <div class="relative aspect-square w-full">
+          <img
+            src="${getImagemPrincipal(t.sub, t.cor)}"
+            data-img1="${getImagemPrincipal(t.sub, t.cor)}"
+            data-img2="${getImagemSecundaria(t.sub, t.cor)}"
+            data-state="1"
+            class="w-full h-full object-cover"
+            onerror="this.src='imagens/tecidos/sem-imagem.jpg'">
+          <button
+            onclick="alternarImagem(event, this)"
+            class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-2 py-1 rounded">
+            ↻
+          </button>
+        </div>
 
-        section.appendChild(grid);
-        app.appendChild(section);
+        <div class="p-1.5">
+          <p class="text-[7px] text-slate-400 font-bold truncate">${t.cor}</p>
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-blue-400 font-black">${rolos}R</span>
+            <span class="text-[7px] text-slate-500 font-bold">${t.quantidadeKg}k</span>
+          </div>
+        </div>
+      </div>`;
     });
-};
 
-/* ================= IMPORTAÇÃO EXCEL ================= */
+    section.appendChild(grid);
+    app.appendChild(section);
+  });
+}
+
+/* ================= IMPORTAÇÃO EXCEL (RECONHECE TUDO) ================= */
 document.getElementById("excel-input").addEventListener("change", e => {
     const reader = new FileReader();
+
     reader.onload = async evt => {
         const workbook = XLSX.read(evt.target.result, { type: "binary" });
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
+        const rows = XLSX.utils.sheet_to_json(
+            workbook.Sheets[workbook.SheetNames[0]],
+            { defval: "" }
+        );
 
         for (const r of rows) {
-            const dadosObj = {
-                categoria: String(r.Categoria).toUpperCase().trim(),
-                sub: String(r.Subcategoria).toUpperCase().trim(),
-                cor: String(r.Cor).toUpperCase().trim(),
-                hex: String(r.Hex || "").match(/\d+/)?.toString() || "",
-                quantidadeKg: String(r.Quantidade).trim()
+
+            // 🔑 CODIGO identifica TECIDO e CATEGORIA
+            const codigo = String(r.CODIGO || "").trim();
+            const produto = MAPA_PRODUTOS[codigo] || {
+                tecido: "DESCONHECIDO",
+                categoria: "SEM_CATEGORIA"
             };
 
-            const existe = tecidos.find(t => t.cor === dadosObj.cor && t.sub === dadosObj.sub);
-            if (existe) await updateDoc(doc(db, "tecidos", existe.id), dadosObj);
-            else await addDoc(tecidosCol, dadosObj);
+            // 🎨 HEX identifica cor visual
+            const hexCodigo = String(r.HEX || "").match(/\d+/)?.toString() || "";
+
+            // ⚖️ Quantidade
+            const quantidade = String(r.QUANTIDADE || "0").trim();
+
+            const dadosObj = {
+                hex: hexCodigo,
+                codigo: codigo,
+                sub: produto.tecido,          // TECIDO
+                categoria: produto.categoria, // CATEGORIA
+                cor: String(r.COR || "").toUpperCase().trim(),
+                quantidadeKg: quantidade
+            };
+
+            // evita duplicar pelo mesmo CODIGO + COR
+            const existe = tecidos.find(
+                t => t.codigo === codigo && t.cor === dadosObj.cor
+            );
+
+            if (existe) {
+                await updateDoc(doc(db, "tecidos", existe.id), dadosObj);
+            } else {
+                await addDoc(tecidosCol, dadosObj);
+            }
         }
-        alert("Importado com sucesso!");
+
+        alert("Importação concluída com reconhecimento automático!");
     };
+
     reader.readAsBinaryString(e.target.files[0]);
 });
 
+
 /* ================= FILTROS ================= */
 window.filtrar = c => {
-    filtroAtual = c;
-    render();
-    atualizarFiltros();
+  filtroAtual = c;
+  render();
+  atualizarFiltros();
 };
 
 function atualizarFiltros() {
-    const el = document.getElementById("dynamic-filters");
-    const cats = ["todos", ...new Set(tecidos.map(t => t.categoria))];
-    el.innerHTML = cats.map(c =>
-        `<button onclick="filtrar('${c}')" class="px-3 py-1 text-[8px] rounded-full font-bold ${filtroAtual === c ? "bg-blue-600" : "bg-slate-800"}">${c}</button>`
-    ).join("");
+  const el = document.getElementById("dynamic-filters");
+  const cats = ["todos", ...new Set(tecidos.map(t => t.categoria))];
+  el.innerHTML = cats.map(c =>
+    `<button onclick="filtrar('${c}')"
+      class="px-3 py-1 text-[8px] rounded-full font-bold
+      ${filtroAtual === c ? "bg-blue-600" : "bg-slate-800"}">${c}</button>`
+  ).join("");
 }
+
+/* ================= IMAGEM TOGGLE ================= */
+window.alternarImagem = (e, btn) => {
+  e.stopPropagation();
+  const img = btn.previousElementSibling;
+  if (img.dataset.state === "1") {
+    img.src = img.dataset.img2;
+    img.dataset.state = "2";
+  } else {
+    img.src = img.dataset.img1;
+    img.dataset.state = "1";
+  }
+};
 
 /* ================= LIMPAR ================= */
 window.limparTudo = async () => {
-    if (prompt("Senha:") === SENHA_MESTRA) {
-        const snap = await getDocs(tecidosCol);
-        for (const d of snap.docs) await deleteDoc(doc(db, "tecidos", d.id));
-    }
+  if (prompt("Digite a senha para ZERAR o estoque:") === SENHA_MESTRA) {
+    const snap = await getDocs(tecidosCol);
+    for (const d of snap.docs)
+      await deleteDoc(doc(db, "tecidos", d.id));
+    alert("Banco zerado.");
+  }
 };
 </script>
+
 
 </body>
 </html>
