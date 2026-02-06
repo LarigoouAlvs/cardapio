@@ -3,47 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soutex - Grid 16</title>
+    <title>PRONTA ENTREGA SOUTEX</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* Ajuste para garantir que os cards caibam 4 por linha em telas pequenas */
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 6px;
-        }
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@media (min-width: 1024px) {
+  .color-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
         .filter-scroll { overflow-x: auto; white-space: nowrap; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .modal { display: none; position: fixed; z-index: 100; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(6px); }
         .modal.active { display: flex; align-items: center; justify-content: center; }
+    
+/* Remove setas do input number */
+input[type=number] {
+  appearance: textfield;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
     </style>
 </head>
 <body class="bg-black text-slate-100 font-sans hide-scroll">
 
-    <div id="ajuste-modal" class="modal p-4">
-        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl w-full max-w-xs shadow-2xl">
-            <h3 id="modal-titulo" class="text-center font-black text-blue-500 uppercase mb-4 text-xs tracking-widest">Tecido</h3>
-            
-            <div class="flex items-center justify-between gap-3 mb-6">
-                <button onclick="mudarValor(-15)" class="bg-red-600 active:bg-red-700 w-12 h-12 rounded-full font-black text-lg shadow-lg">-15</button>
-                <div class="text-center">
-                    <div id="modal-peso" class="text-3xl font-black text-white">0.0</div>
-                    <div class="text-[9px] text-slate-500 uppercase font-bold">Quilos (Kg)</div>
-                </div>
-                <button onclick="mudarValor(15)" class="bg-green-600 active:bg-green-700 w-12 h-12 rounded-full font-black text-lg shadow-lg">+15</button>
-            </div>
+<div id="ajuste-modal" class="modal p-4">
+  <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl w-full max-w-xs shadow-2xl">
 
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="fecharModal()" class="bg-slate-800 p-3 rounded-xl font-bold text-[9px] uppercase">Sair</button>
-                <button onclick="salvarAjuste()" class="bg-blue-600 p-3 rounded-xl font-black text-[9px] uppercase shadow-blue-900/40 shadow-md">Salvar</button>
-            </div>
-        </div>
+    <!-- TÍTULO -->
+    <h3
+      id="modal-titulo"
+      class="text-center font-black text-blue-500 uppercase mb-3 text-xs tracking-widest">
+      Tecido
+    </h3>
+
+    <!-- AJUSTE -->
+    <div class="flex items-center justify-between gap-3 mb-2">
+
+      <!-- -16 -->
+      <button
+        onclick="mudarValor(-16)"
+        class="bg-red-700 w-10 h-10 rounded-full font-black text-[10px] shadow-lg">
+        −16
+      </button>
+
+      <!-- INPUT CENTRAL (MAIOR) -->
+      <input
+        id="input-ajuste"
+        type="number"
+        step="0.001"
+        placeholder="+ / − kg"
+        class="flex-1 text-center text-sm bg-slate-800 text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <!-- +16 -->
+      <button
+        onclick="mudarValor(16)"
+        class="bg-green-700 w-10 h-10 rounded-full font-black text-[10px] shadow-lg">
+        +16
+      </button>
+
     </div>
+
+    <!-- ESTOQUE ATUAL -->
+    <div class="text-center mb-4">
+      <div
+        id="estoque-atual"
+        class="text-[10px] text-slate-400 uppercase font-bold">
+        ESTOQUE ATUAL: 0 KG
+      </div>
+    </div>
+
+    <!-- AÇÕES -->
+    <div class="grid grid-cols-2 gap-3">
+      <button
+        onclick="fecharModal()"
+        class="bg-slate-800 p-2.5 rounded-xl font-bold text-[10px] uppercase">
+        Sair
+      </button>
+
+      <button
+        onclick="salvarAjuste()"
+        class="bg-blue-600 p-2.5 rounded-xl font-black text-[10px] uppercase shadow-md">
+        Salvar
+      </button>
+    </div>
+
+  </div>
+</div>
+
 
     <header class="p-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
         <div class="flex justify-between items-center mb-2">
-            <h1 class="text-[11px] font-black text-blue-500 italic">SOUTEX_16GRID</h1>
+            <h1 class="text-[11px] font-black text-blue-500 italic">PRONTA_ENTREGA_SOUTEX</h1>
             <div class="flex gap-1">
                 <button onclick="limparTudo()" class="text-[8px] border border-red-500/30 text-red-500 px-2 py-1 rounded">ZERAR</button>
                 <label class="bg-blue-600 text-[8px] px-3 py-1.5 rounded font-black cursor-pointer">
@@ -95,6 +161,23 @@ function normalizarTexto(txt) {
     .trim();
 }
 
+function formatarKg(valor) {
+  const n = Number(String(valor).replace(",", "."));
+  if (isNaN(n)) return "0";
+  return n.toFixed(3).replace(".", ",").replace(/,?0+$/, "");
+}
+
+function normalizarNomeCor(cor) {
+  if (!cor) return "";
+
+  return cor
+    .toUpperCase()
+    .replace(/\s+\d+$/, "") // remove " 193933"
+    .trim();
+}
+
+
+
 /* ================= IMAGENS ================= */
 function getImagemPrincipal(sub, cor) {
   return `imagens/tecidos/${normalizarTexto(sub)}_${normalizarTexto(cor)}.jpg`;
@@ -105,20 +188,20 @@ function getImagemSecundaria(sub, cor) {
 
 /* ================= MAPA DE PRODUTOS ================= */
 const MAPA_PRODUTOS = {
-  "1510021015": { tecido: "QUADRILE", categoria: "CAMISARIA" },
-  "151501021":  { tecido: "INTRA", categoria: "CAMISARIA" },
+  "1510021015": { tecido: "QUADRILE", categoria: "DRYFIT" },
+  "151501021":  { tecido: "INTRA", categoria: "DRYFIT" },
   "151501047":  { tecido: "BERLIM", categoria: "BLACKOUT" },
 
   "1515010548": { tecido: "JAC_TRIF_MESCLA", categoria: "JACQUARD" },
   "151501061":  { tecido: "PRESS", categoria: "NAO_COLOCAR" },
 
   "1515010744": { tecido: "CALIFORNIA", categoria: "PROMOCOES" },
-  "1515011287": { tecido: "CANNES", categoria: "CAMISARIA" },
+  "1515011287": { tecido: "CANNES", categoria: "DRYFIT" },
   "1515011360": { tecido: "CALIFORNIA_EMPIRE", categoria: "PROMOCOES" },
   "1515011363": { tecido: "CALIFORNIA_VENICE", categoria: "PROMOCOES" },
 
   "1515011398": { tecido: "HAVAI_UV", categoria: "LISOS" },
-  "151501173":  { tecido: "ASTRO", categoria: "CAMISARIA" },
+  "151501173":  { tecido: "ASTRO", categoria: "DRYFIT" },
   "1515011984": { tecido: "FORRO", categoria: "LISOS" },
 
   "1515012035": { tecido: "PARIS", categoria: "BLACKOUT" },
@@ -158,7 +241,7 @@ const MAPA_PRODUTOS = {
 
   "1515015151": { tecido: "JACQUARD_LUX_NS030", categoria: "JACQUARD" },
 
-  "1515015223": { tecido: "MOVE", categoria: "CAMISARIA" },
+  "1515015223": { tecido: "MOVE", categoria: "DRYFIT" },
 
   "1515015355": { tecido: "JAC_LUX_ABJL56B", categoria: "JACQUARD" },
   "1515015356": { tecido: "JAC_LUX_ABJL57", categoria: "JACQUARD" },
@@ -169,14 +252,14 @@ const MAPA_PRODUTOS = {
   "1515015615": { tecido: "MOSCOU", categoria: "BLACKOUT" },
   "1515015617": { tecido: "BERLIM_OPACO_MAQ_10", categoria: "BLACKOUT" },
 
-  "1515015767": { tecido: "CANNES_140", categoria: "CAMISARIA" },
+  "1515015767": { tecido: "CANNES_140", categoria: "DRYFIT" },
 
   "151501814":  { tecido: "CROSS_UV", categoria: "LISOS" },
   "151501934":  { tecido: "JERSEY_POWER_CASPER", categoria: "JACQUARD" },
   "151502082":  { tecido: "BERLIM_LIGHT", categoria: "BLACKOUT" },
 
-  "1515014850": { tecido: "CANNES_BRILHO", categoria: "CAMISARIA" },
-  "151501984":  { tecido: "ENERGY", categoria: "CAMISARIA" },
+  "1515014850": { tecido: "CANNES_BRILHO", categoria: "DRYFIT" },
+  "151501984":  { tecido: "ENERGY", categoria: "DRYFIT" },
 
   "1515014928": { tecido: "JERSEY_POWER_MICRON", categoria: "JACQUARD" },
 
@@ -187,8 +270,102 @@ const MAPA_PRODUTOS = {
 
   "1515012690": { tecido: "CROSS_DIGITAL_UV_CL56_V1", categoria: "PROMOCOES" },
   "1515015494": { tecido: "CROSS_DIGITAL_UV_AB4149_V1", categoria: "PROMOCOES" },
-  "1515015727": { tecido: "CROSS_DIGITAL_UV_AB4207_V3", categoria: "PROMOCOES" }
+  "1515015727": { tecido: "CROSS_DIGITAL_UV_AB4207_V3", categoria: "PROMOCOES" },
+  "1515014700": { tecido: "MAJESTIC", categoria: "BRILHOSOS" },
+
+"1515014762": { tecido: "JACQUARD_LUX_EF2B", categoria: "JACQUARD" },
+
+"1515015526": { tecido: "JACQUARD_FUSION_NS039", categoria: "JACQUARD" },
+
+"1515015396": { tecido: "JACQUARD_FUSION_ARABESQUE_P1_COL", categoria: "JACQUARD" },
+
+"1515015666": { tecido: "JACQUARD_LUX_LISO_FOSCO", categoria: "JACQUARD" }
+
+
 };
+
+/* ================= MAPA DE CORES SOUTEX (RGB AJUSTADO AO PDF) ================= */
+const MAPA_CORES = {
+  // NEUTROS
+  "BRANCO": "#FFFFFF",
+  "OFF-WHITE": "#F2EFE6",
+  "PRETO": "#0E0E0E",
+  "GRAY": "#C9C9C9",
+  "GULL": "#B8BCC0",
+  "CINZANO": "#8A8E92",
+  "GRIS": "#6F7276",
+  "CHUMBO": "#3E3F42",
+
+  // AZUIS
+  "MARINHO": "#1C2F3E",
+  "ROYAL 25": "#0A3F7A",
+  "ROYAL BIC": "#0B56A6",
+  "SKY BLUE": "#9EC6DD",
+  "PORCELANA BLUE": "#8FB6D6",
+  "SERENO": "#6FA3C8",
+  "RIVERSIDE": "#5D7B98",
+  "MIRANTE": "#6C8DAA",
+  "SEAPORT": "#195F6E",
+
+  // VERDES
+  "MENTA": "#9ED5BF",
+  "VERDE PRADA": "#6AA38A",
+  "VERDE SPECTRA": "#2F9D67",
+  "JADE": "#507B63",
+  "CHIVE": "#3C5A42",
+  "FOREST": "#1F3A2C",
+  "PISTACHE": "#9FB47A",
+
+  // AMARELOS / LARANJAS
+  "PALE BANANA": "#F4E3A2",
+  "AMARELO SPECTRA": "#FFD200",
+  "CURRY": "#C7A04C",
+  "TANGERINA TIGER": "#E9641F",
+  "LARANJA RUSSET": "#C85A2C",
+  "CRYSTAL ROSE": "#F3C8CF",
+
+  // ROSAS / VERMELHOS
+  "ROSA ORCHID": "#E2A6C4",
+  "CICLAMINO": "#C64B88",
+  "FLAMINGO": "#F05F7D",
+  "MAGENTA": "#C71E5B",
+  "ROSA RED": "#C11E37",
+  "CARDIAL": "#8C1A1D",
+  "VINHO": "#461C29",
+  "BLOSSOM": "#D890B0",
+
+  // ROXOS
+  "MARSALA": "#6B2D3A",
+  "PURPLE ROSE": "#B493C7",
+  "PÚRPURA": "#7A3FA4",
+  "DAHLIA": "#6B3C87",
+  "ELETRIC PURPLE": "#8E2CFF",
+
+  // MARRONS
+  "CAPUCCINO": "#6B4B37",
+  "COCOA BROWN": "#4A2C28",
+  "MOCHA MOUSSE": "#8A684E",
+  "TAUPE": "#8D8172",
+  "KAKI": "#7B6A3C",
+  "PÂNTANO": "#3D482F"
+};
+
+
+
+/* ================= RESOLVE COR → HEX ================= */
+function resolverHex(corOriginal) {
+  const cor = normalizarNomeCor(corOriginal);
+
+  if (MAPA_CORES[cor]) {
+    return MAPA_CORES[cor]; // HEX REAL
+  }
+
+  console.warn("COR NÃO ENCONTRADA:", corOriginal);
+  return "#2C2C2C";
+}
+
+
+
 
 /* ================= REALTIME ================= */
 onSnapshot(query(tecidosCol), snap => {
@@ -198,35 +375,101 @@ onSnapshot(query(tecidosCol), snap => {
 });
 
 /* ================= MODAL ================= */
+
 window.abrirModal = (id, peso, nome) => {
+  const pesoNum = Number(String(peso).replace(",", "."));
+
   itemSelecionado = {
     id,
-    pesoTexto: peso,
-    pesoNumero: Number(String(peso).replace(",", ".")),
-    nome
+    pesoOriginal: pesoNum,
+    pesoAtual: pesoNum
   };
+
   document.getElementById("modal-titulo").innerText = nome;
-  document.getElementById("modal-peso").innerText = peso;
+  document.getElementById("estoque-atual").innerText =
+    `ESTOQUE ATUAL: ${formatarKg(pesoNum)} KG`;
+
+  const input = document.getElementById("input-ajuste");
+  input.value = "";
+
+  input.oninput = e => {
+    const v = Number(String(e.target.value).replace(",", "."));
+    if (isNaN(v)) return;
+
+    itemSelecionado.pesoAtual =
+      Math.max(0, itemSelecionado.pesoOriginal + v);
+
+    document.getElementById("estoque-atual").innerText =
+      `ESTOQUE ATUAL: ${formatarKg(itemSelecionado.pesoAtual)} KG`;
+  };
+
   document.getElementById("ajuste-modal").classList.add("active");
 };
 
-window.mudarValor = v => {
-  itemSelecionado.pesoNumero = Math.max(0, itemSelecionado.pesoNumero + v);
-  itemSelecionado.pesoTexto = itemSelecionado.pesoNumero.toString().replace(".", ",");
-  document.getElementById("modal-peso").innerText = itemSelecionado.pesoTexto;
+window.mudarValor = valor => {
+  itemSelecionado.pesoAtual = Math.max(
+    0,
+    itemSelecionado.pesoAtual + valor
+  );
+
+  document.getElementById("estoque-atual").innerText =
+    `ESTOQUE ATUAL: ${formatarKg(itemSelecionado.pesoAtual)} KG`;
 };
 
-window.fecharModal = () =>
+window.fecharModal = () => {
+  itemSelecionado = null;
   document.getElementById("ajuste-modal").classList.remove("active");
+};
 
 window.salvarAjuste = async () => {
-  if (prompt("Senha:") === SENHA_MESTRA) {
-    await updateDoc(doc(db, "tecidos", itemSelecionado.id), {
-      quantidadeKg: itemSelecionado.pesoTexto
-    });
-    fecharModal();
-  }
+  if (!itemSelecionado) return;
+  if (prompt("Senha:") !== SENHA_MESTRA) return;
+
+  await updateDoc(
+    doc(db, "tecidos", itemSelecionado.id),
+    { quantidadeKg: formatarKg(itemSelecionado.pesoAtual) }
+  );
+
+  fecharModal();
 };
+
+window.aplicarHexFallback = (img) => {
+  const hex = img.dataset.hex;
+  if (!hex) return;
+
+  const container = img.parentElement;
+  img.remove();
+
+  // CAMADA BASE (COR REAL)
+  const base = document.createElement("div");
+  base.className = "absolute inset-0";
+  base.style.backgroundColor = hex;
+
+  // CAMADA TEXTURA (SEM ALTERAR COR)
+  const texture = document.createElement("div");
+  texture.className = "absolute inset-0 pointer-events-none";
+  texture.style.backgroundImage =
+    "repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 1px, rgba(0,0,0,0) 1px 6px)";
+  texture.style.mixBlendMode = "overlay";
+
+  // CONTAINER
+  const wrapper = document.createElement("div");
+  wrapper.className = "relative w-full h-full";
+
+  // LABEL
+  const label = document.createElement("span");
+  label.className =
+    "absolute bottom-1 right-1 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded";
+  label.innerText = hex;
+
+  wrapper.appendChild(base);
+  wrapper.appendChild(texture);
+  wrapper.appendChild(label);
+
+  container.appendChild(wrapper);
+};
+
+
 
 /* ================= RENDER ================= */
 function render() {
@@ -241,100 +484,163 @@ function render() {
 
   subs.forEach(sub => {
     const section = document.createElement("section");
-    section.innerHTML = `<h2 class="text-[9px] text-slate-400 font-bold mb-1 ml-1">${sub}</h2>`;
+
+    section.innerHTML = `
+      <h2 class="text-[9px] text-slate-400 font-bold mb-1 ml-1 uppercase">
+        ${sub}
+      </h2>
+    `;
 
     const grid = document.createElement("div");
     grid.className = "color-grid";
 
-    dados.filter(t => t.sub === sub).forEach(t => {
-      const kgNum = Number(String(t.quantidadeKg).replace(",", "."));
-      const rolos = Math.floor(kgNum / KG_POR_ROLO);
+    dados
+      .filter(t => t.sub === sub)
+      .forEach(t => {
+        const kgNum = Number(
+          String(formatarKg(t.quantidadeKg)).replace(",", ".")
+        );
+        const rolos = Math.floor(kgNum / KG_POR_ROLO);
 
-      grid.innerHTML += `
-      <div onclick="abrirModal('${t.id}','${t.quantidadeKg}','${t.cor}')"
-        class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+        grid.innerHTML += `
+          <div
+            onclick="abrirModal('${t.id}','${t.quantidadeKg}','${t.cor}')"
+            class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 
-        <div class="relative aspect-square w-full">
-          <img
-            src="${getImagemPrincipal(t.sub, t.cor)}"
-            data-img1="${getImagemPrincipal(t.sub, t.cor)}"
-            data-img2="${getImagemSecundaria(t.sub, t.cor)}"
-            data-state="1"
-            class="w-full h-full object-cover"
-            onerror="this.src='imagens/tecidos/sem-imagem.jpg'">
-          <button
-            onclick="alternarImagem(event, this)"
-            class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-2 py-1 rounded">
-            ↻
-          </button>
-        </div>
+            <div class="relative aspect-square w-full">
+              <img
+  src="${getImagemPrincipal(t.sub, t.cor)}"
+  data-img1="${getImagemPrincipal(t.sub, t.cor)}"
+  data-img2="${getImagemSecundaria(t.sub, t.cor)}"
+  data-hex="${t.hex}"
+  data-state="1"
+  class="w-full h-full object-cover"
+  onerror="aplicarHexFallback(this)">
 
-        <div class="p-1.5">
-          <p class="text-[7px] text-slate-400 font-bold truncate">${t.cor}</p>
-          <div class="flex justify-between items-center">
-            <span class="text-[10px] text-blue-400 font-black">${rolos}R</span>
-            <span class="text-[7px] text-slate-500 font-bold">${t.quantidadeKg}k</span>
+
+              <button
+                onclick="alternarImagem(event, this)"
+                class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-2 py-1 rounded">
+                ↻
+              </button>
+            </div>
+
+            <div class="p-1.5">
+              <p class="text-[8px] text-slate-400 font-bold truncate uppercase">
+  ${t.cor}
+</p>
+
+${t.obs ? `
+  <p class="text-[7px] text-yellow-400 font-bold mt-0.5 truncate">
+    * ${t.obs.toUpperCase()}
+  </p>
+` : ""}
+
+
+              <div class="flex justify-between items-center">
+                <span class="text-[11px] text-blue-400 font-black">
+                  ${rolos}R
+                </span>
+                <span class="text-[8px] text-slate-500 font-bold">
+                  ${t.quantidadeKg}k
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>`;
-    });
+        `;
+      });
 
     section.appendChild(grid);
     app.appendChild(section);
   });
 }
 
-/* ================= IMPORTAÇÃO EXCEL (RECONHECE TUDO) ================= */
+
+/* ================= IMPORTAÇÃO EXCEL (ATUALIZADA E CORRETA) ================= */
 document.getElementById("excel-input").addEventListener("change", e => {
-    const reader = new FileReader();
+  const reader = new FileReader();
 
-    reader.onload = async evt => {
-        const workbook = XLSX.read(evt.target.result, { type: "binary" });
-        const rows = XLSX.utils.sheet_to_json(
-            workbook.Sheets[workbook.SheetNames[0]],
-            { defval: "" }
-        );
+  reader.onload = async evt => {
+    const workbook = XLSX.read(evt.target.result, { type: "binary" });
+    const rows = XLSX.utils.sheet_to_json(
+      workbook.Sheets[workbook.SheetNames[0]],
+      { defval: "" }
+    );
 
-        for (const r of rows) {
+    for (const r of rows) {
 
-            // 🔑 CODIGO identifica TECIDO e CATEGORIA
-            const codigo = String(r.CODIGO || "").trim();
-            const produto = MAPA_PRODUTOS[codigo] || {
-                tecido: "DESCONHECIDO",
-                categoria: "SEM_CATEGORIA"
-            };
+      /* 🔑 CÓDIGO */
+      const codigo = String(r.CODIGO || "").trim();
 
-            // 🎨 HEX identifica cor visual
-            const hexCodigo = String(r.HEX || "").match(/\d+/)?.toString() || "";
+      const produto = MAPA_PRODUTOS[codigo] || {
+        tecido: "DESCONHECIDO",
+        categoria: "SEM_CATEGORIA"
+      };
 
-            // ⚖️ Quantidade
-            const quantidade = String(r.QUANTIDADE || "0").trim();
+      /* 🎨 COR (NOME) */
+      const cor = String(r.Cor || r.COR || "").toUpperCase().trim();
+const corNormalizada = normalizarNomeCor(cor);
 
-            const dadosObj = {
-                hex: hexCodigo,
-                codigo: codigo,
-                sub: produto.tecido,          // TECIDO
-                categoria: produto.categoria, // CATEGORIA
-                cor: String(r.COR || "").toUpperCase().trim(),
-                quantidadeKg: quantidade
-            };
 
-            // evita duplicar pelo mesmo CODIGO + COR
-            const existe = tecidos.find(
-                t => t.codigo === codigo && t.cor === dadosObj.cor
-            );
+      /* 🎨 HEX (EXCEL → MAPA_CORES) */
+      const hexExcel =
+        String(r.Hex || r.HEX || "").match(/\d+/)?.toString() || "";
 
-            if (existe) {
-                await updateDoc(doc(db, "tecidos", existe.id), dadosObj);
-            } else {
-                await addDoc(tecidosCol, dadosObj);
-            }
-        }
+      const hex = resolverHex(cor, hexExcel);
 
-        alert("Importação concluída com reconhecimento automático!");
-    };
+      /* ⚖️ QUANTIDADE */
+      const quantidade = String(
+        r.Quantidade || r.QUANTIDADE || "0"
+      ).replace(",", ".");
 
-    reader.readAsBinaryString(e.target.files[0]);
+      /* 📝 OBS */
+      const obs = String(r.OBS || "").trim();
+
+      /* 🎯 CATEGORIA FINAL */
+      const categoriaFinal = obs
+        ? "LEVES_DEFEITOS"
+        : produto.categoria;
+
+     const dadosObj = {
+  codigo: codigo,
+  sub: produto.tecido,
+  categoria: categoriaFinal,
+  cor: corNormalizada,   // ✅ AQUI
+  quantidadeKg: quantidade,
+  hex: hex,
+  obs: obs
+};
+
+
+      /* 🔁 CONSOLIDAÇÃO (SOMA) */
+      const existe = tecidos.find(
+  t =>
+    t.codigo === codigo &&
+    t.cor === corNormalizada &&
+    t.categoria === categoriaFinal &&
+    t.obs === obs
+);
+
+
+      if (existe) {
+        const soma =
+          Number(String(existe.quantidadeKg).replace(",", ".")) +
+          Number(String(quantidade).replace(",", "."));
+
+        await updateDoc(doc(db, "tecidos", existe.id), {
+          quantidadeKg: formatarKg(soma),
+          hex: hex,
+          obs: obs
+        });
+      } else {
+        await addDoc(tecidosCol, dadosObj);
+      }
+    }
+
+    alert("Importação concluída com sucesso!");
+  };
+
+  reader.readAsBinaryString(e.target.files[0]);
 });
 
 
@@ -350,8 +656,9 @@ function atualizarFiltros() {
   const cats = ["todos", ...new Set(tecidos.map(t => t.categoria))];
   el.innerHTML = cats.map(c =>
     `<button onclick="filtrar('${c}')"
-      class="px-3 py-1 text-[8px] rounded-full font-bold
-      ${filtroAtual === c ? "bg-blue-600" : "bg-slate-800"}">${c}</button>`
+      class="px-3 py-1 text-[8px] rounded-full font-bold uppercase
+${filtroAtual === c ? "bg-blue-600" : "bg-slate-800"}"
+">${c}</button>`
   ).join("");
 }
 
@@ -367,6 +674,7 @@ window.alternarImagem = (e, btn) => {
     img.dataset.state = "1";
   }
 };
+
 
 /* ================= LIMPAR ================= */
 window.limparTudo = async () => {
